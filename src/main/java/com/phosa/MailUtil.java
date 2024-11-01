@@ -1,50 +1,78 @@
 package com.phosa;
 
-import com.google.gson.JsonParser;
-import com.yeahmobi.itauto.util.feishu.FeishuUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.fluent.Request;
-import org.apache.http.entity.ContentType;
+import javax.mail.*;
+import javax.mail.internet.*;
+import java.util.Properties;
 
 /**
- * @author phosa.gao
+ * 邮箱工具类
+ * <pre>
+ *     {@code
+ * public class Main {
+ *     public static void main(String[] args) {
+ *         String host = "smtp.example.com";
+ *         String port = "587";
+ *         String username = "your-email@example.com";
+ *         String password = "your-email-password";
+ *
+ *         MailUtil mailUtil = new MailUtil(host, port, username, password);
+ *
+ *         try {
+ *             mailUtil.sendEmail("recipient@example.com", "Test Subject", "Test Message");
+ *             System.out.println("Email sent successfully.");
+ *         } catch (MessagingException e) {
+ *             e.printStackTrace();
+ *         }
+ *     }
+ * }}
+ * </pre>
  */
-@Slf4j
 public class MailUtil {
+
+    private final String host;
+    private final String port;
+    private final String username;
+    private final String password;
+    private Properties properties;
+
+    public MailUtil(String host, String port, String username, String password) {
+        this.host = host;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        initProperties();
+    }
+
+    private void initProperties() {
+        properties = new Properties();
+        properties.put("mail.smtp.host", host);
+        properties.put("mail.smtp.port", port);
+        properties.put("mail.smtp.auth", "true");
+        properties.put("mail.smtp.starttls.enable", "true");
+    }
+
+    private Session createSession() {
+        return Session.getInstance(properties, new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(username, password);
+            }
+        });
+    }
+
     /**
-     * @return
-     * 查询邮箱的状态
-     * 1：邮件地址格式错误
-     * 2：邮件地址域名不存在
-     * 3：邮箱地址不存在
-     * 4：启用
-     * 5：已删除（邮箱回收站中）
+     * 发送邮件
+     * @param toAddress 收件人地址
+     * @param subject 邮件主题
+     * @param message 邮件内容
+     * @throws MessagingException 邮件发送异常
      */
-    public static String checkMailStatus(String email)  {
-        String res = null;
-        try {
-            res = Request.Post("https://open.feishu.cn/open-apis/mail/v1/users/query")
-                    .setHeader("Content-Type", "application/json; charset=utf-8")
-                    .setHeader("Authorization", "Bearer " + FeishuUtil.getToken())
-                    .bodyString("{\n" +
-                            "    \"email_list\": [\n" +
-                            "        \"" + email + "\"\n" +
-                            "    ]\n" +
-                            "}", ContentType.APPLICATION_JSON)
-                    .connectTimeout(1000)
-                    .socketTimeout(1000)
-                    .execute().returnContent().asString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        String status = JsonParser.parseString(res).getAsJsonObject().get("data").getAsJsonObject().get("user_list").getAsJsonArray().get(0).getAsJsonObject().get("status").getAsString();
-        log.info("checkMailStatus:{}, res:{}", email, res);
-        return status;
-    }
-    public static boolean checkMailValidAndExist(String email) {
-        return "4".equals(checkMailStatus(email));
-    }
-    public static boolean checkMailValidAndNotExist(String email) {
-        return "3".equals(checkMailStatus(email));
+    public void sendEmail(String toAddress, String subject, String message) throws MessagingException {
+        Session session = createSession();
+        Message msg = new MimeMessage(session);
+        msg.setFrom(new InternetAddress(username));
+        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toAddress));
+        msg.setSubject(subject);
+        msg.setText(message);
+        Transport.send(msg);
     }
 }

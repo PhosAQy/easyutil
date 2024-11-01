@@ -1,210 +1,219 @@
 package com.phosa.net;
 
+import com.phosa.net.model.HttpRequest;
+import com.phosa.net.model.HttpResponse;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
+import java.net.http.HttpClient;
 import java.util.Map;
 
 /**
- * 一个简单易用的Http请求发送工具类，支持GET、POST、PUT、DELETE等请求方法
- *
- * <p>
- *     使用示例：
- * <pre>{@code
- *     Request request = new Request.Builder()
- *                     .url("https://xxxx.com/xxx")
- *                     .method("POST")
- *                     .header("Authorization", "Bearer token")
- *                     .header("Content-Type", "application/json")
- *                     .body("{\"title\":\"foo\",\"body\":\"bar\",\"userId\":1}")
- *                     .build();
- *     // Execute the request and get the response
- *     Response response = execute(request);
- *     // Print the response details to the console
- *     System.out.println("Response Code: " + response.getCode());
- *     System.out.println("Response Body: " + response.getBody());
- *     System.out.println("Response Headers: " + response.getHeaders());
- * }</pre>
+ * 一个简单易用的HTTP请求发送工具类，支持GET、POST、PUT、DELETE等请求方法。
+ * <p>该工具类提供了多种方法来发送HTTP请求，并返回响应内容。
  */
+@Slf4j
 public class HttpUtil {
 
-    // 请求体封装类
-    public static class Request {
-        private final String url;
-        private final String method;
-        private final String body;
-        private final Map<String, String> headers;
-
-        private Request(Builder builder) {
-            this.url = builder.url;
-            this.method = builder.method;
-            this.body = builder.body;
-            this.headers = builder.headers;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public String getMethod() {
-            return method;
-        }
-
-        public String getBody() {
-            return body;
-        }
-
-        public Map<String, String> getHeaders() {
-            return headers;
-        }
-
-        // Builder class for Request
-        public static class Builder {
-            private String url;
-            private String method = "GET";
-            private String body;
-            private final Map<String, String> headers = new HashMap<>();
-
-            public Builder url(String url) {
-                this.url = url;
-                return this;
-            }
-
-            public Builder method(String method) {
-                this.method = method;
-                return this;
-            }
-
-            public Builder body(String body) {
-                this.body = body;
-                return this;
-            }
-
-            public Builder header(String key, String value) {
-                this.headers.put(key, value);
-                return this;
-            }
-
-            public Builder headers(Map<String, String> headers) {
-                this.headers.putAll(headers);
-                return this;
-            }
-
-            public Request build() {
-                return new Request(this);
-            }
-        }
+    /**
+     * 使用GET请求获取指定URL的响应。
+     *
+     * @param url 请求的URL
+     * @return 响应内容
+     */
+    public static String get(String url) {
+        return get(url, null);
     }
 
-    public static Response execute(Request request) throws Exception {
-        URL url = new URL(request.getUrl());
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod(request.getMethod());
-
-        for (Map.Entry<String, String> header : request.getHeaders().entrySet()) {
-            connection.setRequestProperty(header.getKey(), header.getValue());
-        }
-
-        if (request.getBody() != null && ("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
-            connection.setDoOutput(true); // Enable output for the connection
-            try (OutputStream os = connection.getOutputStream()) {
-                os.write(request.getBody().getBytes()); // Write the body content
-                os.flush(); // Flush the output stream to ensure all data is sent
-            }
-        }
-
-        int responseCode = connection.getResponseCode();
-        StringBuilder responseContent = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                responseCode >= 200 && responseCode < 300 ? connection.getInputStream() : connection.getErrorStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                responseContent.append(line);
-            }
-        }
-
-        return new Response.Builder()
-                .code(responseCode)
-                .body(responseContent.toString())
-                .headers(connection.getHeaderFields())
+    /**
+     * 使用GET请求获取指定URL的响应，并附加请求头。
+     *
+     * @param url 请求的URL
+     * @param headers 请求头信息
+     * @return 响应内容
+     */
+    public static String get(String url, Map<String, String> headers) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .url(url)
+                .method("GET")
+                .headers(headers)
                 .build();
+        HttpResponse response = execute(request);
+        return response.getBody();
     }
 
-    public static class Response {
-        private final int code;
-        private final String body;
-        private final Map<String, List<String>> headers;
-
-        private Response(Builder builder) {
-            this.code = builder.code;
-            this.body = builder.body;
-            this.headers = builder.headers;
-        }
-
-        public int getCode() {
-            return code;
-        }
-
-        public String getBody() {
-            return body;
-        }
-
-        public Map<String, List<String>> getHeaders() {
-            return headers;
-        }
-
-        // Builder class for Response
-        public static class Builder {
-            private int code;
-            private String body;
-            private Map<String, List<String>> headers;
-
-            public Builder code(int code) {
-                this.code = code;
-                return this;
-            }
-
-            public Builder body(String body) {
-                this.body = body;
-                return this;
-            }
-
-            public Builder headers(Map<String, List<String>> headers) {
-                this.headers = headers;
-                return this;
-            }
-
-            public Response build() {
-                return new Response(this);
-            }
-        }
+    /**
+     * 使用POST请求发送指定URL的请求。
+     *
+     * @param url 请求的URL
+     * @return 响应内容
+     */
+    public static String post(String url) {
+        return post(url, null, null);
     }
 
-    // Main method for testing the HttpUtil class
-    public static void main(String[] args) {
+    /**
+     * 使用POST请求发送指定URL的请求，并附加参数。
+     *
+     * @param url 请求的URL
+     * @param params 请求参数
+     * @return 响应内容
+     */
+    public static String post(String url, Map<String, String> params) {
+        return post(url, null, params);
+    }
+
+    /**
+     * 使用POST请求发送指定URL的请求，附加请求头和参数。
+     *
+     * @param url 请求的URL
+     * @param headers 请求头信息
+     * @param params 请求参数
+     * @return 响应内容
+     */
+    public static String post(String url, Map<String, String> headers, Map<String, String> params) {
+        StringBuilder body = new StringBuilder();
+        if (params != null) {
+            for (Map.Entry<String, String> param : params.entrySet()) {
+                body.append(param.getKey()).append("=").append(param.getValue()).append("&");
+            }
+            body.deleteCharAt(body.length() - 1);
+        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .url(url)
+                .method("POST")
+                .headers(headers)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body(body.toString())
+                .build();
+        HttpResponse response = execute(request);
+        return response.getBody();
+    }
+
+    /**
+     * 使用POST请求发送JSON数据。
+     *
+     * @param url 请求的URL
+     * @param headers 请求头信息
+     * @param body 请求体内容
+     * @return 响应内容
+     */
+    public static String postJson(String url, Map<String, String> headers, String body) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .url(url)
+                .method("POST")
+                .headers(headers)
+                .header("Content-Type", "application/json")
+                .body(body)
+                .build();
+        HttpResponse response = execute(request);
+        return response.getBody();
+    }
+
+    /**
+     * 使用PATCH请求发送JSON数据。
+     *
+     * @param url 请求的URL
+     * @param headers 请求头信息
+     * @param body 请求体内容
+     * @return 响应内容
+     */
+    public static String patchJson(String url, Map<String, String> headers, String body) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .url(url)
+                .method("PATCH")
+                .headers(headers)
+                .header("Content-Type", "application/json")
+                .body(body)
+                .build();
+        HttpResponse response = execute(request);
+        return response.getBody();
+    }
+
+    /**
+     * 使用PUT请求发送JSON数据。
+     *
+     * @param url 请求的URL
+     * @param headers 请求头信息
+     * @param body 请求体内容
+     * @return 响应内容
+     */
+    public static String putJson(String url, Map<String, String> headers, String body) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .url(url)
+                .method("PUT")
+                .headers(headers)
+                .header("Content-Type", "application/json")
+                .body(body)
+                .build();
+        HttpResponse response = execute(request);
+        return response.getBody();
+    }
+
+    /**
+     * 使用DELETE请求发送指定URL的请求。
+     *
+     * @param url 请求的URL
+     * @param headers 请求头信息
+     * @return 响应内容
+     */
+    public static String delete(String url, Map<String, String> headers) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .url(url)
+                .method("DELETE")
+                .headers(headers)
+                .build();
+        HttpResponse response = execute(request);
+        return response.getBody();
+    }
+
+    /**
+     * 执行给定的HTTP请求并返回响应。
+     *
+     * @param request 要执行的HttpRequest对象
+     * @return 执行后的HttpResponse对象
+     */
+    public static HttpResponse execute(HttpRequest request) {
         try {
-            // Create a new Request instance using the Builder pattern
-            Request request = new Request.Builder()
-                    .url("https://jsonplaceholder.typicode.com/posts")
-                    .method("POST")
-                    .header("Authorization", "Bearer token")
-                    .header("Content-Type", "application/json")
-                    .body("{\"title\":\"foo\",\"body\":\"bar\",\"userId\":1}")
-                    .build();
+            // 创建HttpClient
+            HttpClient client = HttpClient.newHttpClient();
 
-            // Execute the request and get the response
-            Response response = execute(request);
-            // Print the response details to the console
-            System.out.println("Response Code: " + response.getCode());
-            System.out.println("Response Body: " + response.getBody());
-            System.out.println("Response Headers: " + response.getHeaders());
+            // 创建HttpRequest.Builder
+            java.net.http.HttpRequest.Builder builder = java.net.http.HttpRequest.newBuilder()
+                    .uri(new URI(request.getUrl()))
+                    .method(request.getMethod(), request.getBody() != null ?
+                            java.net.http.HttpRequest.BodyPublishers.ofString(request.getBody()) : java.net.http.HttpRequest.BodyPublishers.noBody());
+
+            // 设置请求头
+            if (request.getHeaders() != null) {
+                for (Map.Entry<String, String> header : request.getHeaders().entrySet()) {
+                    builder.header(header.getKey(), header.getValue());
+                }
+            }
+
+            // 构建HttpRequest
+            java.net.http.HttpRequest httpRequest = builder.build();
+
+            // 发送请求并获取响应
+            java.net.http.HttpResponse<String> httpResponse = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+
+            // 创建自定义的HttpResponse对象返回
+            return HttpResponse.newBuilder()
+                    .code(httpResponse.statusCode())
+                    .body(httpResponse.body())
+                    .headers(httpResponse.headers().map())
+                    .build();
         } catch (Exception e) {
-            // Print the stack trace if an exception occurs
-            e.printStackTrace();
+            // 错误处理，返回包含错误信息的响应
+            log.error("请求执行失败", e);
+            return HttpResponse.newBuilder().code(500).body(e.getMessage()).build();
         }
     }
+
 }

@@ -21,7 +21,7 @@ public class CsvUtil {
              CSVParser csvParser = new CSVParser(reader, format)) {
             return csvParser.getRecords();
         } catch (IOException e) {
-            log.error("Error loading accounts from CSV: " + e.getMessage(), e);
+            log.error("Error loading accounts from CSV: {}", e.getMessage(), e);
             throw new IllegalStateException("Cannot load accounts", e);
         }
 
