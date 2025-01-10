@@ -13,11 +13,15 @@ import java.util.Base64;
  * 使用Java实现AES-GCM加密和解密的工具类。
  * <p>该工具类提供了基于AES-GCM模式的加密和解密方法，AES-GCM具有更好的安全性，支持认证。
  */
-public class AESGCMUtil {
+public class AESGCMUtil extends EncryptionUtil {
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12; // GCM推荐的IV长度为12字节
     private static final int GCM_TAG_LENGTH = 128; // GCM认证标签长度，单位为位
+
+    private AESGCMUtil() {
+
+    }
 
     /**
      * 使用AES-GCM加密明文。

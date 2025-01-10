@@ -2,6 +2,7 @@ package com.phosa.json;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONReader;
 import com.phosa.json.model.JsonArray;
 import com.phosa.json.model.JsonObject;
 
@@ -34,7 +35,7 @@ public class JsonUtil {
      * @return 解析后的对象
      */
     public static <T> T parseStringToObject(String json, Class<T> clazz) {
-        return JSON.parseObject(json, clazz);
+        return JSON.parseObject(json, clazz, JSONReader.Feature.SupportSmartMatch);
     }
 
     /**

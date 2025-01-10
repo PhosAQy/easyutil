@@ -2,8 +2,15 @@ package com.phosa.encryption;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * AES256 加密工具
+ */
 @Slf4j
 public class AES256Util extends EncryptionUtil {
+
+    private AES256Util() {
+
+    }
 
     /**
      * 使用AES-256对明文进行加密。

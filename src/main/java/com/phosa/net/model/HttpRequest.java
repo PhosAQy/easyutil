@@ -131,7 +131,9 @@ public class HttpRequest {
          * @return 当前Builder对象
          */
         public HttpRequest.Builder headers(Map<String, String> headers) {
-            this.headers.putAll(headers);
+            if (headers != null) {
+                this.headers.putAll(headers);
+            }
             return this;
         }
 

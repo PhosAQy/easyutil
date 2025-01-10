@@ -47,6 +47,9 @@ public class EncryptionUtil {
      * AES	    16	    16
      * DES	    8	    8
      * DES3	    24	    8
+     *
+     * @param algorithm algorithm
+     * @param transformation transformation
      * @param plaintext 明文字符串
      * @param key 加密密钥（需要特定位长度的字符串 AES:）
      * @return Base64编码的密文字符串
@@ -84,6 +87,8 @@ public class EncryptionUtil {
     /**
      * 使用AES-256对Base64编码的密文进行解密。
      *
+     * @param algorithm algorithm
+     * @param transformation
      * @param ciphertext Base64编码的密文字符串
      * @param key 解密密钥（需要与加密时使用的密钥相同）
      * @return 解密后的明文字符串
