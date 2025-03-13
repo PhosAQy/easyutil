@@ -1,112 +1,103 @@
-package com.phosa.json;
+package com.phosa.json
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
-import com.alibaba.fastjson2.JSONReader;
-import com.phosa.json.model.JsonArray;
-import com.phosa.json.model.JsonObject;
+import com.phosa.json.model.JsonArray
+import com.phosa.json.model.JsonObject
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.lang.reflect.Type
+import kotlin.collections.toMutableMap
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+object JsonUtil {
 
-/**
- * JSON工具类，用于处理对象与JSON之间的转换。
- * <p>该工具类提供了多种方法来将Java对象、列表、Map等转换为JSON格式，或者将JSON字符串转换为对应的Java对象。
- */
-public class JsonUtil {
+    private val log: Logger = LoggerFactory.getLogger(JsonUtil::class.java)
 
-    /**
-     * 将对象转换为JSON字符串。
-     *
-     * @param obj 需要转换为JSON的对象
-     * @return JSON格式的字符串
-     */
-    public static String toJson(Object obj) {
-        return JSON.toJSONString(obj);
+
+    private val moshi: Moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+
+    // 获取 moshi 实例的公开 getter
+    fun getMoshiInstance(): Moshi {
+        return moshi
     }
 
-    /**
-     * 将JSON字符串解析为指定类型的对象。
-     *
-     * @param json JSON字符串
-     * @param clazz 目标对象的类型
-     * @param <T> 泛型类型
-     * @return 解析后的对象
-     */
-    public static <T> T parseStringToObject(String json, Class<T> clazz) {
-        return JSON.parseObject(json, clazz, JSONReader.Feature.SupportSmartMatch);
+    // 获取 JsonAdapter
+    inline fun <reified T> getAdapter(type: Type): JsonAdapter<T> {
+        return getMoshiInstance().adapter(type)
     }
 
-    /**
-     * 将JSON字符串解析为Map，键和值均为字符串类型。
-     *
-     * @param json JSON字符串
-     * @return 包含JSON内容的Map对象
-     */
-    public static Map<String, String> parseStringToMap(String json) {
-        Map<String, String> map = new LinkedHashMap<>();
-        JsonObject object = parseStringToJSONObject(json);
-        for (Map.Entry<String, Object> entry : object.getEntrySet()) {
-            map.put(entry.getKey(), entry.getValue().toString());
+
+    // 解析 JSON 字符串为指定类型的对象
+    inline  fun <reified T> fromJson(json: String, type: Type): T? {
+        return try {
+            val jsonAdapter = getAdapter<T>(type)
+            jsonAdapter.fromJson(json)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
-        return map;
     }
 
-    /**
-     * 将JSON字符串解析为指定类型的列表。
-     *
-     * @param json JSON字符串
-     * @param clazz 列表中元素的类型
-     * @param <T> 泛型类型
-     * @return 解析后的列表
-     */
-    public static <T> List<T> parseStringToList(String json, Class<T> clazz) {
-        return JSON.parseArray(json, clazz);
+    // 将对象转为 JSON 字符串
+    fun toJson(obj: Any): String {
+        return try {
+            val jsonAdapter = getAdapter<Any>(obj.javaClass)
+            jsonAdapter.toJson(obj)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ""
+        }
     }
 
-    /**
-     * 将一个对象转换为另一个指定类型的对象。
-     *
-     * @param obj 原始对象
-     * @param clazz 目标对象的类型
-     * @param <T> 泛型类型
-     * @return 转换后的对象
-     */
-    public static <T> T parseObjectToObject(Object obj, Class<T> clazz) {
-        return parseStringToObject(toJson(obj), clazz);
+    // 解析 JSON 字符串为 Map
+    fun parseStringToJsonObject(json: String): JsonObject? {
+        return JsonObject(parseStringToMap(json)?:emptyMap())
     }
 
-    /**
-     * 将一个列表转换为另一个指定类型的列表。
-     *
-     * @param oriList 原始列表
-     * @param clazz 目标列表中元素的类型
-     * @param <T> 泛型类型
-     * @return 转换后的列表
-     */
-    public static <T> List<T> parseListToList(List<?> oriList, Class<T> clazz) {
-        return parseStringToList(toJson(oriList), clazz);
+    // 解析 JSON 字符串为 Map
+    fun parseStringToJsonArray(json: String): JsonArray? {
+        return JsonArray(
+            try {
+                val jsonAdapter = getAdapter<List<Any>>(List::class.java)
+                jsonAdapter.fromJson(json) ?: emptyList()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+        )
+    }
+    // 解析 JSON 字符串为 Map
+    fun parseStringToMap(json: String): Map<String, Any>? {
+        return fromJson<Map<String, Any>>(json, Map::class.java)
     }
 
-    /**
-     * 将JSON字符串解析为JSONObject对象。
-     *
-     * @param json JSON字符串
-     * @return JSONObject对象
-     */
-    public static JsonObject parseStringToJSONObject(String json) {
-        JSONObject jsonObject = JSON.parseObject(json);
-        return new JsonObject(jsonObject);
+    inline fun <reified T> parseObjectToObject(json: Any) : T? {
+        return fromJson<T>(toJson(json), T::class.java)
+    }
+    inline fun <reified T> parseStringToObject(json: String) : T? {
+        return fromJson<T>(json, T::class.java)
+    }
+    fun <T> parseStringToList(json: String) : List<T>? {
+        return fromJson<List<T>>(json, List::class.java)
+    }
+    fun <T> parseListToList(list: List<Any>) : List<T>? {
+        return fromJson<List<T>>(toJson(list), List::class.java)
     }
 
-    /**
-     * 将JSON字符串解析为JSONArray对象。
-     *
-     * @param json JSON字符串
-     * @return JSONArray对象
-     */
-    public static JsonArray parseStringToJSONArray(String json) {
-        return new JsonArray(JSON.parseArray(json));
+
+    // 转换任意对象为 JsonAdapter 使用的 JSON 字符串
+    fun toJsonString(value: Any): String {
+        return try {
+            val jsonAdapter = getAdapter<Any>(value.javaClass)
+            jsonAdapter.toJson(value)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ""
+        }
     }
 }
+
+
+
+

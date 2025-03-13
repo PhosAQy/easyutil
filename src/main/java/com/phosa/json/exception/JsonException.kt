@@ -1,12 +1,7 @@
-package com.phosa.json.exception;
+package com.phosa.json.exception
 
-public class JsonException extends RuntimeException {
+class JsonException : Exception {
+    constructor(message: String?) : super(message)
 
-    public JsonException(String message) {
-        super(message);
-    }
-
-    public JsonException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    constructor(message: String?, cause: Throwable?) : super(message, cause)
 }

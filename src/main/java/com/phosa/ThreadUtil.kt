@@ -1,25 +1,22 @@
-package com.phosa;
+package com.phosa
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.util.concurrent.*
+import java.util.concurrent.ThreadPoolExecutor.AbortPolicy
 
-import java.util.concurrent.*;
 
 /**
  * 线程工具类
  */
-public class ThreadUtil {
+object ThreadUtil {
 
-    private static ExecutorService threadPool;
+    val log: Logger = LoggerFactory.getLogger(ThreadUtil::class.java)
 
-    static {
-        updateThreadPool(5, 10);
-    }
+    private var threadPool: ExecutorService? = null
 
-    /**
-     * 更新线程池
-     * @param corePoolSize 核心线程数
-     */
-    public static void updateThreadPool(int corePoolSize) {
-        updateThreadPool(corePoolSize, corePoolSize);
+    init {
+        updateThreadPool(5, 10)
     }
 
     /**
@@ -27,54 +24,55 @@ public class ThreadUtil {
      * @param corePoolSize 核心线程数
      * @param maxPollSize 最大线程数
      */
-    public static void updateThreadPool(int corePoolSize, int maxPollSize) {
-        updateThreadPool(new ThreadPoolExecutor(
+    @JvmOverloads
+    fun updateThreadPool(corePoolSize: Int, maxPollSize: Int = corePoolSize) {
+        updateThreadPool(
+            ThreadPoolExecutor(
                 corePoolSize,
                 maxPollSize,
                 0L,
                 TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(maxPollSize),
+                LinkedBlockingQueue<Runnable?>(maxPollSize),
                 Executors.defaultThreadFactory(),
-                new ThreadPoolExecutor.AbortPolicy()
-        ));
+                AbortPolicy()
+            )
+        )
     }
 
     /**
      * 更新线程池
      * @param threadPoolExecutor 线程池
      */
-    public static void updateThreadPool(ThreadPoolExecutor threadPoolExecutor) {
-        shutdownThreadPool();
-        threadPool = threadPoolExecutor;
+    fun updateThreadPool(threadPoolExecutor: ThreadPoolExecutor?) {
+        shutdownThreadPool()
+        threadPool = threadPoolExecutor
     }
 
     /**
      * 执行任务
      * @param task 任务
      */
-    public static void executeTask(Runnable task) {
-        if (threadPool == null) {
-            throw new IllegalStateException("ThreadUtil: Thread pool has not been initialized.");
-        }
-        threadPool.execute(task);
+    fun executeTask(task: Runnable) {
+        checkNotNull(threadPool) { "ThreadUtil: Thread pool has not been initialized." }
+        threadPool!!.execute(task)
     }
 
     /**
      * 关闭线程池
      */
-    public static void shutdownThreadPool() {
+    fun shutdownThreadPool() {
         if (threadPool != null) {
-            threadPool.shutdown();
+            threadPool!!.shutdown()
             try {
-                if (!threadPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                    threadPool.shutdownNow();
+                if (!threadPool!!.awaitTermination(30, TimeUnit.SECONDS)) {
+                    threadPool!!.shutdownNow()
                 }
-            } catch (InterruptedException e) {
-                threadPool.shutdownNow();
-                Thread.currentThread().interrupt();
+            } catch (e: InterruptedException) {
+                log.error("关闭线程池异常：{}", e.message, e)
+                threadPool!!.shutdownNow()
+                Thread.currentThread().interrupt()
             }
         }
     }
-
 }
 

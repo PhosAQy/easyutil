@@ -1,36 +1,20 @@
-package com.phosa.net;
+package com.phosa.net
 
-import com.phosa.net.model.HttpRequest;
-import com.phosa.net.model.HttpResponse;
-import lombok.extern.slf4j.Slf4j;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.net.http.HttpClient;
-import java.util.Map;
+import com.phosa.json.JsonUtil
+import com.phosa.net.model.HttpRequest
+import com.phosa.net.model.HttpResponse
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.http.HttpClient
 
 /**
  * 一个简单易用的HTTP请求发送工具类，支持GET、POST、PUT、DELETE等请求方法。
- * <p>该工具类提供了多种方法来发送HTTP请求，并返回响应内容。
+ *
+ * 该工具类提供了多种方法来发送HTTP请求，并返回响应内容。
  */
-@Slf4j
-public class HttpUtil {
-
-    /**
-     * 使用GET请求获取指定URL的响应。
-     *
-     * @param url 请求的URL
-     * @return 响应内容
-     */
-    public static String get(String url) {
-        return get(url, null);
-    }
-
+object HttpUtil {
+    private val log: Logger = LoggerFactory.getLogger(HttpUtil::class.java)
     /**
      * 使用GET请求获取指定URL的响应，并附加请求头。
      *
@@ -38,35 +22,15 @@ public class HttpUtil {
      * @param headers 请求头信息
      * @return 响应内容
      */
-    public static String get(String url, Map<String, String> headers) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .url(url)
-                .method("GET")
-                .headers(headers)
-                .build();
-        HttpResponse response = execute(request);
-        return response.getBody();
-    }
-
-    /**
-     * 使用POST请求发送指定URL的请求。
-     *
-     * @param url 请求的URL
-     * @return 响应内容
-     */
-    public static String post(String url) {
-        return post(url, null, null);
-    }
-
-    /**
-     * 使用POST请求发送指定URL的请求，并附加参数。
-     *
-     * @param url 请求的URL
-     * @param params 请求参数
-     * @return 响应内容
-     */
-    public static String post(String url, Map<String, String> params) {
-        return post(url, null, params);
+    @JvmOverloads
+    fun get(url: String?, headers: Map<String, String>? = null): String? {
+        val request = HttpRequest.newBuilder()
+            .url(url)
+            .method(HttpRequest.GET)
+            .headers(headers)
+            .build()
+        val response = execute(request)
+        return response.body
     }
 
     /**
@@ -77,23 +41,28 @@ public class HttpUtil {
      * @param params 请求参数
      * @return 响应内容
      */
-    public static String post(String url, Map<String, String> headers, Map<String, String> params) {
-        StringBuilder body = new StringBuilder();
+    @JvmOverloads
+    fun post(
+        url: String?,
+        headers: Map<String, String>? = null,
+        params: Map<String, String>? = null
+    ): String? {
+        val body = StringBuilder()
         if (params != null) {
-            for (Map.Entry<String, String> param : params.entrySet()) {
-                body.append(param.getKey()).append("=").append(param.getValue()).append("&");
+            for (param in params.entries) {
+                body.append(param.key).append("=").append(param.value).append("&")
             }
-            body.deleteCharAt(body.length() - 1);
+            body.deleteCharAt(body.length - 1)
         }
-        HttpRequest request = HttpRequest.newBuilder()
-                .url(url)
-                .method("POST")
-                .headers(headers)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .body(body.toString())
-                .build();
-        HttpResponse response = execute(request);
-        return response.getBody();
+        val request = HttpRequest.newBuilder()
+            .url(url)
+            .method(HttpRequest.POST)
+            .headers(headers)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body.toString())
+            .build()
+        val response = execute(request)
+        return response.body
     }
 
     /**
@@ -104,16 +73,16 @@ public class HttpUtil {
      * @param body 请求体内容
      * @return 响应内容
      */
-    public static String postJson(String url, Map<String, String> headers, String body) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .url(url)
-                .method("POST")
-                .headers(headers)
-                .header("Content-Type", "application/json")
-                .body(body)
-                .build();
-        HttpResponse response = execute(request);
-        return response.getBody();
+    fun postJson(url: String?, headers: Map<String, String>?, body: String?): String? {
+        val request = HttpRequest.newBuilder()
+            .url(url)
+            .method(HttpRequest.POST)
+            .headers(headers)
+            .header("Content-Type", "application/json")
+            .body(body)
+            .build()
+        val response = execute(request)
+        return response.body
     }
 
     /**
@@ -124,16 +93,16 @@ public class HttpUtil {
      * @param body 请求体内容
      * @return 响应内容
      */
-    public static String patchJson(String url, Map<String, String> headers, String body) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .url(url)
-                .method("PATCH")
-                .headers(headers)
-                .header("Content-Type", "application/json")
-                .body(body)
-                .build();
-        HttpResponse response = execute(request);
-        return response.getBody();
+    fun patchJson(url: String?, headers: Map<String, String>?, body: String?): String? {
+        val request = HttpRequest.newBuilder()
+            .url(url)
+            .method(HttpRequest.PATCH)
+            .headers(headers)
+            .header("Content-Type", "application/json")
+            .body(body)
+            .build()
+        val response = execute(request)
+        return response.body
     }
 
     /**
@@ -144,16 +113,16 @@ public class HttpUtil {
      * @param body 请求体内容
      * @return 响应内容
      */
-    public static String putJson(String url, Map<String, String> headers, String body) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .url(url)
-                .method("PUT")
-                .headers(headers)
-                .header("Content-Type", "application/json")
-                .body(body)
-                .build();
-        HttpResponse response = execute(request);
-        return response.getBody();
+    fun putJson(url: String?, headers: Map<String, String>?, body: String?): String? {
+        val request = HttpRequest.newBuilder()
+            .url(url)
+            .method(HttpRequest.PUT)
+            .headers(headers)
+            .header("Content-Type", "application/json")
+            .body(body)
+            .build()
+        val response = execute(request)
+        return response.body
     }
 
     /**
@@ -163,14 +132,14 @@ public class HttpUtil {
      * @param headers 请求头信息
      * @return 响应内容
      */
-    public static String delete(String url, Map<String, String> headers) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .url(url)
-                .method("DELETE")
-                .headers(headers)
-                .build();
-        HttpResponse response = execute(request);
-        return response.getBody();
+    fun delete(url: String?, headers: Map<String, String>?): String? {
+        val request = HttpRequest.newBuilder()
+            .url(url)
+            .method(HttpRequest.DELETE)
+            .headers(headers)
+            .build()
+        val response = execute(request)
+        return response.body
     }
 
     /**
@@ -179,41 +148,40 @@ public class HttpUtil {
      * @param request 要执行的HttpRequest对象
      * @return 执行后的HttpResponse对象
      */
-    public static HttpResponse execute(HttpRequest request) {
+    fun execute(request: HttpRequest): HttpResponse {
         try {
             // 创建HttpClient
-            HttpClient client = HttpClient.newHttpClient();
+            val client = HttpClient.newHttpClient()
 
             // 创建HttpRequest.Builder
-            java.net.http.HttpRequest.Builder builder = java.net.http.HttpRequest.newBuilder()
-                    .uri(new URI(request.getUrl()))
-                    .method(request.getMethod(), request.getBody() != null ?
-                            java.net.http.HttpRequest.BodyPublishers.ofString(request.getBody()) : java.net.http.HttpRequest.BodyPublishers.noBody());
+            val builder = java.net.http.HttpRequest.newBuilder()
+                .uri(URI(request.url!!))
+                .method(
+                    request.method,
+                    if (request.body != null) java.net.http.HttpRequest.BodyPublishers.ofString(request.body) else java.net.http.HttpRequest.BodyPublishers.noBody()
+                )
 
             // 设置请求头
-            if (request.getHeaders() != null) {
-                for (Map.Entry<String, String> header : request.getHeaders().entrySet()) {
-                    builder.header(header.getKey(), header.getValue());
+            if (request.headers.isNotEmpty()) {
+                for (header in request.headers.entries) {
+                    builder.header(header.key, header.value)
                 }
             }
 
             // 构建HttpRequest
-            java.net.http.HttpRequest httpRequest = builder.build();
+            val httpRequest = builder.build()
 
             // 发送请求并获取响应
-            java.net.http.HttpResponse<String> httpResponse = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            val httpResponse = client.send<String?>(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString())
 
             // 创建自定义的HttpResponse对象返回
             return HttpResponse.newBuilder()
-                    .code(httpResponse.statusCode())
-                    .body(httpResponse.body())
-                    .headers(httpResponse.headers().map())
-                    .build();
-        } catch (Exception e) {
-            // 错误处理，返回包含错误信息的响应
-            log.error("请求执行失败", e);
-            return HttpResponse.newBuilder().code(500).body(e.getMessage()).build();
+                .code(httpResponse.statusCode())
+                .body(httpResponse.body())
+                .headers(httpResponse.headers().map())
+                .build()
+        } catch (e: Exception) {
+            return HttpResponse.newBuilder().code(500).body(e.message).build()
         }
     }
-
 }

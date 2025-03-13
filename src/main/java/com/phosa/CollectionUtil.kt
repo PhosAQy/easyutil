@@ -1,20 +1,21 @@
-package com.phosa;
+package com.phosa
 
-import lombok.extern.slf4j.Slf4j;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.util.function.Consumer
+import java.util.function.Function
+import java.util.function.Predicate
+import java.util.stream.Collectors
 
 /**
  * 集合工具类，用于对集合中的元素进行操作。
- * <p>目前提供的方法包括对集合中的元素进行审核，判断是否所有元素都满足特定条件。
+ *
+ * 目前提供的方法包括对集合中的元素进行审核，判断是否所有元素都满足特定条件。
  */
-@Slf4j
-public class CollectionUtil {
+object CollectionUtil {
+
+
+    val log: Logger = LoggerFactory.getLogger(CollectionUtil::class.java)
 
     /**
      * 检查集合中的元素是否都满足给定的审核条件。
@@ -23,18 +24,19 @@ public class CollectionUtil {
      * @param reviewAsset 审核条件，传入一个函数，接受集合中的元素并返回布尔值，表示是否通过审核
      * @param <T> 集合元素的类型
      * @return 如果所有元素都通过审核，返回true，否则返回false
-     */
-    public static <T> Boolean review(Collection<T> assets, Function<T, Boolean> reviewAsset) {
-        for (T asset : assets) {
-            log.info("审核：{}", asset);  // 输出正在审核的元素
-            if (!reviewAsset.apply(asset)) {
-                log.info("未通过！");  // 如果元素未通过审核，记录日志并返回false
-                return false;
+    </T> */
+    fun <T> review(assets: MutableCollection<T?>, reviewAsset: Function<T?, Boolean?>): Boolean {
+        for (asset in assets) {
+            log.info("审核：{}", asset) // 输出正在审核的元素
+            if (!reviewAsset.apply(asset)!!) {
+                log.info("未通过！") // 如果元素未通过审核，记录日志并返回false
+                return false
             }
-            log.info("通过！");  // 如果元素通过审核，记录日志
+            log.info("通过！") // 如果元素通过审核，记录日志
         }
-        return true;  // 如果所有元素都通过审核，返回true
+        return true // 如果所有元素都通过审核，返回true
     }
+
     /**
      * 过滤集合中的元素，返回符合条件的元素列表。
      *
@@ -42,9 +44,9 @@ public class CollectionUtil {
      * @param predicate 过滤条件
      * @param <T> 集合元素的类型
      * @return 符合条件的元素列表
-     */
-    public static <T> List<T> filter(Collection<T> collection, Predicate<T> predicate) {
-        return collection.stream().filter(predicate).collect(Collectors.toList());
+    </T> */
+    fun <T> filter(collection: MutableCollection<T?>, predicate: Predicate<T?>?): MutableList<T?> {
+        return collection.stream().filter(predicate).collect(Collectors.toList())
     }
 
     /**
@@ -54,9 +56,9 @@ public class CollectionUtil {
      * @param predicate 查找条件
      * @param <T> 集合元素的类型
      * @return 符合条件的第一个元素或null
-     */
-    public static <T> T findFirst(Collection<T> collection, Predicate<T> predicate) {
-        return collection.stream().filter(predicate).findFirst().orElse(null);
+    </T> */
+    fun <T> findFirst(collection: MutableCollection<T?>, predicate: Predicate<T?>?): T? {
+        return collection.stream().filter(predicate).findFirst().orElse(null)
     }
 
     /**
@@ -65,9 +67,9 @@ public class CollectionUtil {
      * @param collection 待处理的集合
      * @param action 对每个元素的处理操作
      * @param <T> 集合元素的类型
-     */
-    public static <T> void forEach(Collection<T> collection, Function<T, Void> action) {
-        collection.forEach(action::apply);
+    </T> */
+    fun <T> forEach(collection: MutableCollection<T?>, action: Function<T?, Void?>) {
+        collection.forEach(Consumer { t: T? -> action.apply(t) })
     }
 
     /**
@@ -78,9 +80,9 @@ public class CollectionUtil {
      * @param <T> 原始集合元素的类型
      * @param <R> 映射后的元素类型
      * @return 映射后的元素列表
-     */
-    public static <T, R> List<R> map(Collection<T> collection, Function<T, R> mapper) {
-        return collection.stream().map(mapper).collect(Collectors.toList());
+    </R></T> */
+    fun <T, R> map(collection: MutableCollection<T?>, mapper: Function<T?, R?>?): MutableList<R?> {
+        return collection.stream().map<R?>(mapper).collect(Collectors.toList())
     }
 
     /**
@@ -90,8 +92,8 @@ public class CollectionUtil {
      * @param predicate 检查条件
      * @param <T> 集合元素的类型
      * @return 如果存在符合条件的元素，返回true，否则返回false
-     */
-    public static <T> boolean anyMatch(Collection<T> collection, Predicate<T> predicate) {
-        return collection.stream().anyMatch(predicate);
+    </T> */
+    fun <T> anyMatch(collection: MutableCollection<T?>, predicate: Predicate<T?>?): Boolean {
+        return collection.stream().anyMatch(predicate)
     }
 }
