@@ -1,5 +1,7 @@
 package com.phosa.json.model
 
+import com.phosa.json.JsonUtil
+
 class JsonObject(private var map: Map<String, Any>) {
 
     constructor() : this(emptyMap())
@@ -38,19 +40,22 @@ class JsonObject(private var map: Map<String, Any>) {
 
     // 添加或更新一个键值对
     fun put(key: String, value: Any): Any? {
-        return if (map.containsKey(key)) {
-            val oldValue = map[key]
-            val updatedMap = map.toMutableMap()
-            updatedMap[key] = value
-            map = updatedMap
-            oldValue
-        } else {
-            null
+        val oldValue = map[key]
+        val updatedMap = map.toMutableMap().apply {
+            this[key] = when (value) {
+                is JsonObject -> value.getMap()
+                is JsonArray -> value.getList()
+                else -> value
+            }
         }
+        map = updatedMap.toMap()
+        return oldValue
     }
 
     // 扩展方法，用于打印 map 内容（可选）
     override fun toString(): String {
-        return map.toString()
+        return JsonUtil.toJson(getMap())
     }
+
+
 }

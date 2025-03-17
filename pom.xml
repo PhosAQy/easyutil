@@ -6,7 +6,7 @@
 
     <groupId>io.github.phosaqy</groupId>
     <artifactId>easyutil</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.2a</version>
     <name>easyutil</name>
     <description>easyutil in kotlin</description>
     <url>https://github.com/PhosAQy/easyutil.git</url>
